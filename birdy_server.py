@@ -20,6 +20,37 @@ app.config.from_object(__name__)
 app.config.from_envvar('BIRDY_SETTINGS', silent=True)
 
 
+class Retriever:
+    """Retrieves data from the DB."""
+    def __init__(self, fields, table, cond=None):
+        super(Retriever, self).__init__()
+        self.fields = fields
+        self.table = table
+        self.condition = cond
+        self.db = connect_db()
+
+    def build_req(self):
+        req = "SELECT %s FROM %s WHERE %s;" % (', '.join(self.fields), self.table, self.condition)
+        if not self.condition:
+            req = req.split('WHERE')[0]  # Remove the condition part
+        return req
+
+    def jsonify(self, result):
+        json_result = []
+        for line in result:
+            dict_res = {self.fields[pos]: self.line[pos] for pos in len(self.fields)}
+            json_result.append(json.dumps(dict_res))
+        json_result = json_result[0] if len(json_result) == 1 else json_result
+        return json_result
+
+    def fetch(self):
+        cur = self.db.cursor()
+        req = self.build_req()
+        cur.execute(req)
+        res = self.jsonify(cur.fetchall())
+        return result
+
+
 def connect_db():
     """
     Opens a new database connection if there is none yet for the
@@ -39,17 +70,6 @@ def init_db():
     with app.open_resource('schema.sql', mode='r') as f:
         db.cursor().executescript(f.read())
     db.commit()
-
-
-def retrieve_user(username):
-    fields = ['login_user', 'numero_tel', 'e_mail', 'nom', 'prenom', 'numero_tel_sec']
-    req = "SELECT %s FROM utilisateur WHERE login_user = %s;" % (', '.join(fields), username)
-    db = connect_db()
-    cur = db.cursor()
-    cur.execute(req)
-    user = cur.fetchone()
-    json_user = {fields[pos]: user[pos] for pos in len(fields)}
-    return json_user
 
 
 def update_user(username):
@@ -104,8 +124,11 @@ def create_user():
 
 @app.route('/utilisateur/<username>', methods=['GET', 'PUT', 'DELETE'])
 def manage_user(username):
+    fields = ['login_user', 'numero_tel', 'e_mail', 'nom', 'prenom', 'numero_tel_sec']
+    table = utilisateur
     if request.method == 'GET':
-        retrieve_user(username)
+        condition = "login_user=%s" % username
+        return Retriever(fields, table, condition).fetch()
     elif request.method == 'PUT':
         update_user(username)
     elif request.method == 'DELETE':
