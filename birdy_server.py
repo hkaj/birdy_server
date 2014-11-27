@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
     Birdy
-    ~~~~~~~~
+    --------
 
     The server part of Birdy.
 
@@ -11,6 +11,7 @@
 
 from contextlib import closing
 from flask import Flask
+import json
 import psycopg2
 
 # create and config the app
@@ -25,11 +26,9 @@ def connect_db():
     current application context.
     """
     conn = psycopg2.connect(
-        database=database,
-        user=db_user,
-        password=db_pass,
-        host=db_host,
-        port=db_port
+        database=app.config['DATABASE'],
+        user=app.config['USER'],
+        password=app.config['PASSWORD'],
     )
     return conn
 
@@ -43,7 +42,14 @@ def init_db():
 
 
 def retrieve_user(username):
-    pass
+    fields = ['login_user', 'numero_tel', 'e_mail', 'nom', 'prenom', 'numero_tel_sec']
+    req = "SELECT %s FROM utilisateur WHERE login_user = %s;" % (', '.join(fields), username)
+    db = connect_db()
+    cur = db.cursor()
+    cur.execute(req)
+    user = cur.fetchone()
+    json_user = {fields[pos]: user[pos] for pos in len(fields)}
+    return json_user
 
 
 def update_user(username):

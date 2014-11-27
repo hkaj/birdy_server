@@ -7,6 +7,12 @@ SET search_path = public, pg_catalog;
 SET default_tablespace = '';
 SET default_with_oids = false;
 
+DROP SEQUENCE utilisateur_id_user_seq;
+DROP SEQUENCE position_id_position_seq;
+DROP SEQUENCE liensUtilisateurs_id_lien_seq;
+DROP TABLE utilisateur;
+DROP TABLE position;
+DROP TABLE liensUtilisateurs;
 
 -- Name: liensUtilisateurs; Type: TABLE; Schema: public; Owner: birdy_admin
 CREATE TABLE liensUtilisateurs (
@@ -59,7 +65,6 @@ ALTER SEQUENCE position_id_position_seq OWNER TO birdy_admin;
 ALTER SEQUENCE position_id_position_seq OWNED BY position.id_position;
 
 SELECT pg_catalog.setval('position_id_position_seq', 6, true);
-
 
 -- Name: utilisateur; Type: TABLE; Schema: public; Owner: birdy_admin; Tablespace: 
 CREATE TABLE utilisateur (
@@ -136,7 +141,6 @@ ALTER TABLE ONLY utilisateur
 -- Name: utilisateur_pkey; Type: CONSTRAINT; Schema: public; Owner: birdy_admin; Tablespace: 
 ALTER TABLE ONLY utilisateur
     ADD CONSTRAINT utilisateur_pkey PRIMARY KEY (id_user);
-
 
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
 REVOKE ALL PRIVILEGES ON SCHEMA public FROM PUBLIC;
