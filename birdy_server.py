@@ -10,8 +10,9 @@
 """
 
 from contextlib import closing
-from flask import Flask
+from flask import Flask, request
 import json
+from passlib import sha256_crypt
 import psycopg2
 from db_utils import Retriever, Deleter, Inserter
 
@@ -80,7 +81,12 @@ def create_user():
     if user != '[]':
         return '''{"resp": "ERROR - User already exists."}'''
     else:
-        return Inserter('utilisateur', request.form).insert()
+        # This way we only store salted hashs, no password.
+        request.form['password'] = sha256_crypt.encrypt(request.form['password'])
+        res = Inserter('utilisateur', request.form).insert()
+        # Init a line in the position table for the new user
+        Inserter('position', {'login_user': request.form['login']}).insert()
+        return res
 
 
 @app.route('/utilisateur/<username>', methods=['GET', 'PUT', 'DELETE'])
