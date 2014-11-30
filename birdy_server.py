@@ -71,14 +71,6 @@ def logout(session):
     return xml_res
 
 
-def retrieve_position(login):
-    pass
-
-
-def update_position(login):
-    pass
-
-
 def create_relative(login1, login2):
     pass
 
@@ -139,12 +131,21 @@ def manage_auth():
 
 
 @app.route('/position/<login>', methods=['GET', 'PUT', ])
-def manage_user(login):
-    # the functions will need data from the request
+def manage_position(login):
+    fields = ['id_position', 'login_user', 'latitude', 'longitude', 'vit', 'acc', 'last_update']
+    table = 'position'
+    condition = 'WHERE login_user=%s' % login
     if request.method == 'GET':
-        retrieve_position(login)
+        resp = Retriever(fields, table, condition).fetch()
+        if resp == '[]':
+            return '''{"resp": "ERROR - Failed to read the position."}'''
     elif request.method == 'PUT':
-        update_position(login)
+        # check that the user exists
+        user = Retriever('login_user', table, 'login_user=%s' % login).fetch()
+        if user == '[]':
+            return '''{"resp": "ERROR - Failed to update the position."}'''
+        else:
+            return Updater('position', request.form, condition).update()
 
 
 @app.route('/relatives/<login>')

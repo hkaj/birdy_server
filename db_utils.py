@@ -75,7 +75,7 @@ class Updater(object):
         try:
             cur.execute(req)
             db.commit()
-            # we could use it to return the modified user.
+            # we could use it to return the modified data.
             # resp = Retriever(['*'], self.table, self.condition).fetch()
             cur.close()
             db.close()
