@@ -10,11 +10,12 @@
 """
 
 from contextlib import closing
-from flask import Flask, request
+from db_utils import Retriever, Deleter, Inserter
+from flask import Flask, escape, request
 import json
 from passlib import sha256_crypt
 import psycopg2
-from db_utils import Retriever, Deleter, Inserter
+import xml.etree.ElementTree as ET
 
 # create and config the app
 app = Flask(__name__)
@@ -38,16 +39,44 @@ def delete_user(username):
     pass
 
 
-def get_auth():
-    pass
+def check_auth(session):
+    xml_res = ET.fromstring("<response></response>")
+    msg = ET.Element('message')
+    if 'username' in session:
+        # escape will protect against XSS if we decide to render this
+        msg.text = "%s - You are authenticated." % escape(session['username'])
+    else:
+        msg.text = "NULL - You are not authenticated."
+    xml_res.append(msg)
+    return ET.dumps(xml_res)
 
 
-def make_auth():
-    pass
+def login(request):
+    xml_res = ET.fromstring("<response></response>")
+    login, passwd = request.form['usernm'], request.form['userpwd']
+    db_info = json.loads(Retriever(
+        ['login_user', 'password'],
+        'utilisateur',
+        'login_user=%s' % login
+    ).fetch())
+    # if the user exists and the password matches
+    if 'password' in db_info.keys() and sha256_crypt.verify(passwd, db_info['password']):
+        session['username'] = login
+        msg = ET.Element('message')
+        msg.text = '%s - You are now authenticated.' % escape(login)
+        xml_res.append(msg)
+        return xml_res
+    else:
+        abort(401)
 
 
-def remove_auth():
-    pass
+def logout(session):
+    session.pop('username', None)
+    xml_res = ET.fromstring("<response></response>")
+    msg = ET.Element('message')
+    msg.text = 'Log out.'
+    xml_res.append(msg)
+    return xml_res
 
 
 def retrieve_position(login):
@@ -110,11 +139,11 @@ def manage_user(username):
 def manage_auth():
     # the functions will need data from the request
     if request.method == 'GET':
-        get_auth()
+        check_auth(request.session)
     elif request.method == 'POST':
-        make_auth()
+        login(request)
     elif request.method == 'DELETE':
-        remove_auth()
+        logout()
 
 
 @app.route('/position/<login>', methods=['GET', 'PUT', ])
@@ -144,3 +173,12 @@ def manage_relative(login1, login2):
 @app.route('/relativesPositions/<login>')
 def get_relative_positions(login):
     pass
+
+
+@app.errorhandler(401)
+def wrong_credentials():
+    xml_res = ET.fromstring("<response></response>")
+    msg = ET.Element('message')
+    msg.text = 'NULL - Wrong credentials.'
+    xml_res.append(msg)
+    return xml_res
