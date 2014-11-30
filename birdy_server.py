@@ -31,14 +31,6 @@ def init_db():
     db.commit()
 
 
-def update_user(username):
-    pass
-
-
-def delete_user(username):
-    pass
-
-
 def check_auth(session):
     xml_res = ET.fromstring("<response></response>")
     msg = ET.Element('message')
@@ -143,7 +135,7 @@ def manage_auth():
     elif request.method == 'POST':
         login(request)
     elif request.method == 'DELETE':
-        logout()
+        logout(request.session)
 
 
 @app.route('/position/<login>', methods=['GET', 'PUT', ])
