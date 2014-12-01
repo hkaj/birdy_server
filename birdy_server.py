@@ -27,7 +27,7 @@ app.config.from_envvar('BIRDY_SETTINGS', silent=True)
 def init_db():
     """Initializes the database."""
     db = db_utils.connect_db()
-    with app.open_resource('schema.sql', mode='r') as f:
+    with app.open_resource('sql/schema.sql', mode='r') as f:
         db.cursor().executescript(f.read())
     db.commit()
 
