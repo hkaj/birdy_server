@@ -12,16 +12,18 @@
 import json
 import xml.etree.ElementTree as ET
 
-from auth_utils import check_auth, login, logout
-from db_utils import Retriever, Deleter, Inserter
+from utils.auth_utils import check_auth, login, logout
+from utils.db_utils import Retriever, Deleter, Inserter
 from flask import Flask, escape, request
-from passlib import sha256_crypt
+from passlib.hash import sha256_crypt
 
 
 # create and config the app
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('BIRDY_SETTINGS', silent=True)
+DEBUG = True
+SECRET_KEY = 'dev.key'
 
 
 def init_db():
@@ -165,3 +167,6 @@ def wrong_credentials():
     msg.text = 'NULL - Wrong credentials.'
     xml_res.append(msg)
     return xml_res
+
+if __name__ == "__main__":
+    app.run()
