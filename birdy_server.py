@@ -10,28 +10,55 @@
 """
 
 import json
+import psycopg2
 import xml.etree.ElementTree as ET
 
-from utils.auth_utils import check_auth, login, logout
-from utils.db_utils import Retriever, Deleter, Inserter
-from flask import Flask, escape, request
-from passlib.hash import sha256_crypt
+from contextlib import closing
+from core.auth import check_auth, login, logout
+from core.db import Retriever, Deleter, Inserter
+from flask import Flask, escape, request, g
+from passlib.hash import md5_crypt, sha256_crypt
 
 
 # create and config the app
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('BIRDY_SETTINGS', silent=True)
-DEBUG = True
+app.config['DEBUG'] = True
 SECRET_KEY = 'dev.key'
+
+
+def connect_db():
+    """
+    Opens a new database connection if there is none yet for the
+    current application context.
+    """
+    conn = psycopg2.connect(
+        database=app.config['DATABASE'],
+        user=app.config['USER'],
+        password=md5_crypt(app.config['PASSWORD']),
+    )
+    return conn
+
+
+@app.before_request
+def before_request():
+    g.db = connect_db()
+
+
+@app.teardown_request
+def teardown_request(exception):
+    db = getattr(g, 'db', None)
+    if db is not None:
+        db.close()
 
 
 def init_db():
     """Initializes the database."""
-    db = db_utils.connect_db()
-    with app.open_resource('sql/schema.sql', mode='r') as f:
-        db.cursor().executescript(f.read())
-    db.commit()
+    with closing(connect_db()) as db:
+        with app.open_resource('sql/schema.sql', mode='r') as f:
+            db.cursor().executescript(f.read())
+        db.commit()
 
 
 def create_relative(login1, login2):

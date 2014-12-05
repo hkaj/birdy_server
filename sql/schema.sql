@@ -7,13 +7,6 @@ SET search_path = public, pg_catalog;
 SET default_tablespace = '';
 SET default_with_oids = false;
 
-DROP SEQUENCE utilisateur_id_user_seq;
-DROP SEQUENCE position_id_position_seq;
-DROP SEQUENCE liensUtilisateurs_id_lien_seq;
-DROP TABLE utilisateur;
-DROP TABLE position;
-DROP TABLE liensUtilisateurs;
-
 -- Name: liensUtilisateurs; Type: TABLE; Schema: public; Owner: birdy_admin
 CREATE TABLE liensUtilisateurs (
     id_lien integer NOT NULL,
@@ -105,18 +98,28 @@ ALTER TABLE utilisateur
 
 
 -- Data for Name: utilisateur; Type: TABLE DATA; Schema: public; Owner: birdy_admin
-COPY utilisateur (id_user, login_user, password, nom, prenom, numero_tel, e_mail, numero_tel_sec) FROM stdin;
-7	matthieu	dummy	Tixier	Matthieu	0998877665	tixierma@utc.fr	\N
-\.
+INSERT INTO utilisateur (login_user, password) VALUES ('hkaj', 'foo');
+INSERT INTO utilisateur (login_user, password) VALUES ('mdaragon', 'bar');
+INSERT INTO utilisateur (login_user, password) VALUES ('avolle', 'foobar');
 
 -- Data for liensUtilisateurs
-COPY liensUtilisateurs (id_lien, login_user_1, login_user_2, type, status) FROM stdin;
-\.
+INSERT INTO liensUtilisateurs (login_user_1, login_user_2, status) VALUES ('hkaj', 'mdaragon', true);
+INSERT INTO liensUtilisateurs (login_user_1, login_user_2, status) VALUES ('hkaj', 'avolle', true);
+INSERT INTO liensUtilisateurs (login_user_1, login_user_2, status) VALUES ('mdaragon', 'hkaj', true);
+INSERT INTO liensUtilisateurs (login_user_1, login_user_2, status) VALUES ('mdaragon', 'avolle', true);
+INSERT INTO liensUtilisateurs (login_user_1, login_user_2, status) VALUES ('avolle', 'hkaj', true);
+INSERT INTO liensUtilisateurs (login_user_1, login_user_2, status) VALUES ('avolle', 'mdaragon', true);
 
 -- Data for position
-COPY position (id_position, login_user, latitude, longitude, vit, acc, last_update) FROM stdin;
-6   matthieu    49.463999999999999  2.1099999999999999  3.3999999999999999  \N  2013-05-07 17:41:28.339+02
-\.
+INSERT INTO position (login_user, latitude, longitude, vit, acc, last_update)
+VALUES (
+    'hkaj',
+    '49.463999999999999',
+    '2.1099999999999999',
+    '3.3999999999999999',
+    '1',
+    '2013-05-07 17:41:28.339+02'
+);
 
 -- Name: liensUtilisateurs_pkey; Type: CONSTRAINT; Schema: public; Owner: birdy_admin; Tablespace: 
 ALTER TABLE ONLY liensUtilisateurs
