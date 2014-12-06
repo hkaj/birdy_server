@@ -135,6 +135,8 @@ def manage_position(login):
         resp = Retriever(fields, table, condition).fetch()
         if resp == '[]':
             return '''{"resp": "ERROR - Failed to read the position."}'''
+        else:
+            return '{"resp": %s}' % resp
     elif request.method == 'PUT':
         # check that the user exists
         user = Retriever('login_user', table, "login_user='%s'" % login).fetch()
