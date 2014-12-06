@@ -4,14 +4,17 @@ import argparse
 import os
 import psycopg2
 
+from urlparse import urljoin
+
 
 def connect_db():
     """
     Opens a new database connection if there is none yet for the
     current application context.
     """
-    settings_file = os.getenv('BIRDY_SETTINGS', None)
-    if settings_file:
+    birdy_dir = os.getenv('BIRDY', None)
+    if birdy_dir:
+        settings_file = urljoin(birdy_dir, 'birdy.cfg')
         with open(settings_file, 'r') as f:
             settings = f.read()
     else:
@@ -31,19 +34,24 @@ def execute(filename):
     """Initializes the database."""
     db = connect_db()
     if db:
-        with open('sql/%s' % filename, mode='r') as f:
-            db.cursor().execute(f.read())
-        db.commit()
-        db.close()
+        birdy_dir = os.getenv('BIRDY', None)
+        if birdy_dir:
+            path = urljoin(birdy_dir, 'sql/')
+            with open(urljoin(path, filename), mode='r') as f:
+                db.cursor().execute(f.read())
+            db.commit()
+            db.close()
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--action', help='init, clear, or drop.')
-parser.add_argument('-h', help='usage: db_utils.py --action=init|clear|drop')
 args = parser.parse_args()
+args = vars(args)
 if args['action'] == 'init':
-    execute('init_db.sql')
+    execute('schema.sql')
 elif args['action'] == 'clear':
-    clear_db('clear_db.sql')
+    execute('clear_db.sql')
 elif args['action'] == 'drop':
-    drop_db('drop_db.sql')
+    execute('drop_db.sql')
+else:
+    print("'db_utils -h' for help.")

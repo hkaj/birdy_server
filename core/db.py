@@ -26,7 +26,7 @@ class Retriever(object):
     def jsonify(self, result):
         json_result = []
         for line in result:
-            dict_res = {self.fields[pos]: self.line[pos] for pos in len(self.fields)}
+            dict_res = {self.fields[pos]: line[pos] for pos in range(len(self.fields))}
             json_result.append(json.dumps(dict_res))
         json_result = json_result[0] if len(json_result) == 1 else json_result
         return "%s" % json_result

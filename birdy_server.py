@@ -25,7 +25,6 @@ app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('BIRDY_SETTINGS', silent=True)
 app.config['DEBUG'] = True
-SECRET_KEY = 'dev.key'
 
 
 def connect_db():
@@ -36,7 +35,7 @@ def connect_db():
     conn = psycopg2.connect(
         database=app.config['DATABASE'],
         user=app.config['USER'],
-        password=md5_crypt(app.config['PASSWORD']),
+        password=app.config['PASSWORD'],
     )
     return conn
 
@@ -53,23 +52,15 @@ def teardown_request(exception):
         db.close()
 
 
-def init_db():
-    """Initializes the database."""
-    with closing(connect_db()) as db:
-        with app.open_resource('sql/schema.sql', mode='r') as f:
-            db.cursor().executescript(f.read())
-        db.commit()
-
-
 def create_relative(login1, login2):
-    condition = 'login_user=%s OR %s' % (login1, login2)
+    condition = "login_user='%s' OR '%s'" % (login1, login2)
     users = json.loads(Retriever('login_user', 'utilisateur', condition).fetch())
     # Both users exist
     if len(users) == 2:
         rel = Retriever(
             'status',
             'liensUtilisateurs',
-            'status=true AND login_user_1=%s AND login_user_2=%s' % (login1, login2)
+            "status=true AND login_user_1='%s' AND login_user_2='%s'" % (login1, login2)
         ).fetch()
         if rel == '[]':
             data = {}
@@ -95,7 +86,7 @@ def get_all_users():
 
 @app.route('/utilisateur', methods=['POST', ])
 def create_user():
-    user = Retriever('login_user', 'utilisateur', 'login_user=%s' % request.form['login']).fetch()
+    user = Retriever('login_user', 'utilisateur', "login_user='%s'" % request.form['login']).fetch()
     if user != '[]':
         return '''{"resp": "ERROR - User already exists."}'''
     else:
@@ -112,16 +103,16 @@ def manage_user(username):
     fields = ['login_user', 'numero_tel', 'e_mail', 'nom', 'prenom', 'numero_tel_sec']
     table = 'utilisateur'
     if request.method == 'GET':
-        condition = "login_user=%s" % username
+        condition = "login_user='%s'" % username
         return '{"resp": %s}' % Retriever(fields, table, condition).fetch()
     elif request.method == 'PUT':
-        user = Retriever('login_user', 'utilisateur', 'login_user=%s' % username).fetch()
+        user = Retriever('login_user', 'utilisateur', "login_user='%s'" % username).fetch()
         if user == '[]':
             return '''{"resp": "ERROR - User not found."}'''
         else:
-            return Updater('utilisateur', request.form, 'login_user=%s' % username).update()
+            return Updater('utilisateur', request.form, "login_user='%s'" % username).update()
     elif request.method == 'DELETE':
-        return Deleter('utilisateur', 'login_user=%s' % username)
+        return Deleter('utilisateur', "login_user='%s'" % username)
 
 
 @app.route('/authorization', methods=['GET', 'POST', 'DELETE'])
@@ -139,14 +130,14 @@ def manage_auth():
 def manage_position(login):
     fields = ['id_position', 'login_user', 'latitude', 'longitude', 'vit', 'acc', 'last_update']
     table = 'position'
-    condition = 'login_user=%s' % login
+    condition = "login_user='%s'" % login
     if request.method == 'GET':
         resp = Retriever(fields, table, condition).fetch()
         if resp == '[]':
             return '''{"resp": "ERROR - Failed to read the position."}'''
     elif request.method == 'PUT':
         # check that the user exists
-        user = Retriever('login_user', table, 'login_user=%s' % login).fetch()
+        user = Retriever('login_user', table, "login_user='%s'" % login).fetch()
         if user == '[]':
             return '''{"resp": "ERROR - Failed to update the position."}'''
         else:
@@ -167,11 +158,11 @@ def manage_relative(login1, login2):
         create_relative(login1, login2)
     elif request.method == 'PUT':
         # this case isn't useful for now.
-        condition = "((login_user_1=%s AND login_user_2=%s) OR (login_user_1=%s AND login_user_2=%s))" % (
+        condition = "((login_user_1='%s' AND login_user_2='%s') OR (login_user_1='%s' AND login_user_2='%s'))" % (
             login1, login2, login2, login1)
         return Updater('liensUtilisateurs', {'status': 'true'}, condition).update()
     elif request.method == 'DELETE':
-        condition = "((login_user_1=%s AND login_user_2=%s) OR (login_user_1=%s AND login_user_2=%s))" % (
+        condition = "((login_user_1='%s' AND login_user_2='%s') OR (login_user_1='%s' AND login_user_2='%s'))" % (
             login1, login2, login2, login1)
         return Deleter('liensUtilisateurs', condition).delete()
 

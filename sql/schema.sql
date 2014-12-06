@@ -49,6 +49,7 @@ ALTER TABLE public.position OWNER TO birdy_admin;
 
 -- Name: position_id_position_seq; Type: SEQUENCE; Schema: public; Owner: birdy_admin
 CREATE SEQUENCE position_id_position_seq
+    START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
@@ -76,6 +77,7 @@ ALTER TABLE public.utilisateur OWNER TO birdy_admin;
 
 -- Name: utilisateur_id_user_seq; Type: SEQUENCE; Schema: public; Owner: birdy_admin
 CREATE SEQUENCE utilisateur_id_user_seq
+    START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
