@@ -123,6 +123,26 @@ VALUES (
     '2013-05-07 17:41:28.339+02'
 );
 
+INSERT INTO position (login_user, latitude, longitude, vit, acc, last_update)
+VALUES (
+    'avolle',
+    '49.465',
+    '2.11',
+    '3.41',
+    '1',
+    '2013-05-07 18:41:28.339+02'
+);
+
+INSERT INTO position (login_user, latitude, longitude, vit, acc, last_update)
+VALUES (
+    'mdaragon',
+    '49.467',
+    '2.13',
+    '3.43',
+    '1',
+    '2013-05-07 19:41:28.339+02'
+);
+
 -- Name: liensUtilisateurs_pkey; Type: CONSTRAINT; Schema: public; Owner: birdy_admin; Tablespace: 
 ALTER TABLE ONLY liensUtilisateurs
     ADD CONSTRAINT liensUtilisateurs_pkey PRIMARY KEY (id_lien);

@@ -28,9 +28,9 @@ class Retriever(object):
             dict_res = {self.fields[pos]: line[pos] for pos in range(len(self.fields))}
             if 'last_update' in dict_res.keys():
                 dict_res['last_update'] = dict_res['last_update'].isoformat()
-            json_result.append(json.dumps(dict_res))
+            json_result.append(dict_res)
         json_result = json_result[0] if len(json_result) == 1 else json_result
-        return "%s" % json_result
+        return json.dumps(json_result)
 
     def fetch(self):
         cur = g.db.cursor()

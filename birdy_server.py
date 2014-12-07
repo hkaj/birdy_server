@@ -150,8 +150,14 @@ def manage_position(login):
 def get_all_relatives(login):
     fields = ['login_user_2']
     table = 'liensUtilisateurs'
-    condition = 'login_user_1=login_user_2'
-    return '{"resp": %s}' % Retriever(fields, table, condition).fetch()
+    condition = "login_user_1='%s'" % login
+    relative_logins = json.loads(Retriever(fields, table, condition).fetch())
+    relatives = []
+    rel_fields = ['login_user', 'numero_tel', 'e_mail', 'nom', 'prenom', 'numero_tel_sec']
+    for relative in relative_logins:
+        rel_condition = "login_user='%s'" % relative['login_user_2']
+        relatives.append(json.loads(Retriever(rel_fields, 'utilisateur', rel_condition).fetch()))
+    return '{"resp": %s}' % json.dumps(relatives)
 
 
 @app.route('/relative/<login1>/<login2>', methods=['POST', 'PUT', 'DELETE'])
@@ -171,9 +177,9 @@ def manage_relative(login1, login2):
 
 @app.route('/relativesPositions/<login>')
 def get_relative_positions(login):
-    fields = 'rel.login_user_2, pos.latitude, pos.longitude, pos.vit, pos.acc'
-    table = 'liensUtilisateurs AS rel LEFT JOIN position AS pos'
-    condition = 'rel.login_user_1 = %s AND rel.status = true AND type = proche' % login
+    fields = ['rel.login_user_2', 'pos.latitude', 'pos.longitude', 'pos.vit', 'pos.acc']
+    table = 'liensUtilisateurs AS rel LEFT JOIN position AS pos ON rel.login_user_2 = pos.login_user'
+    condition = "rel.login_user_1='%s' AND rel.status=true AND type='proche'" % login
     res = Retriever(fields, table, condition).fetch()
     if res == '[]':
         return '''{"resp": "ERROR - Failed to retrieve friends positions."}'''
