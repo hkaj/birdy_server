@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 from contextlib import closing
 from core.auth import check_auth, login, logout
 from core.db import Retriever, Deleter, Inserter
-from flask import Flask, escape, request, g
+from flask import Flask, escape, request, g, render_template
 from passlib.hash import md5_crypt, sha256_crypt
 
 
@@ -84,17 +84,23 @@ def get_all_users():
     pass
 
 
-@app.route('/utilisateur', methods=['POST', ])
+@app.route('/')
+def index():
+    return render_template("index.html")
+
+
+@app.route('/utilisateur/', methods=['POST', ])
 def create_user():
-    user = Retriever('login_user', 'utilisateur', "login_user='%s'" % request.form['login']).fetch()
+    user = Retriever(['login_user'], 'utilisateur', "login_user='%s'" % request.form.get('login')).fetch()
     if user != '[]':
         return '''{"resp": "ERROR - User already exists."}'''
     else:
+        params = {k: v for k, v in request.form.items()}
         # This way we only store salted hashs, no password.
-        request.form['password'] = sha256_crypt.encrypt(request.form['password'])
-        res = Inserter('utilisateur', request.form).insert()
+        params['password'] = sha256_crypt.encrypt(params['password'])
+        res = Inserter('utilisateur', params).insert()
         # Init a line in the position table for the new user
-        Inserter('position', {'login_user': request.form['login']}).insert()
+        Inserter('position', {'login_user': params['login_user']}).insert()
         return res
 
 

@@ -61,7 +61,7 @@ class Updater(object):
         cur = g.db.cursor()
         try:
             cur.execute(req)
-            db.commit()
+            g.db.commit()
             # we could use it to return the modified data.
             # resp = Retriever(['*'], self.table, self.condition).fetch()
             cur.close()
@@ -86,7 +86,7 @@ class Deleter(object):
         cur = g.db.cursor()
         try:
             cur.execute(req)
-            db.commit()
+            g.db.commit()
             cur.close()
             return '''{"resp": "OK"}'''
         except:
@@ -102,7 +102,10 @@ class Inserter(object):
 
     def build_req(self):
         req = "INSERT INTO %s(%s) VALUES (%s);" % (
-            self.table, ', '.join(self.data_dict.keys()), ', '.join(self.data_dict.values()))
+            self.table,
+            ', '.join(['"%s"' % k for k in self.data_dict.keys()]),
+            ', '.join(["'%s'" % v for v in self.data_dict.values()])
+        )
         return req
 
     def insert(self):
@@ -110,7 +113,7 @@ class Inserter(object):
         cur = g.db.cursor()
         try:
             cur.execute(req)
-            db.commit()
+            g.db.commit()
             cur.close()
             return '''{"resp": "OK"}'''
         except:
