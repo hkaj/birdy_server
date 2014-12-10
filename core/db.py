@@ -19,7 +19,7 @@ class Retriever(object):
 
     def build_req(self):
         req = "SELECT %s FROM %s WHERE %s;" % (', '.join(self.fields), self.table, self.condition)
-        req = req.split('WHERE')[0] if not self.condition else req  # Removes the condition part
+        req = "%s;" % req.split(' WHERE')[0] if not self.condition else req  # Removes the condition part
         return req
 
     def jsonify(self, result):
@@ -29,6 +29,7 @@ class Retriever(object):
             if 'last_update' in dict_res.keys():
                 dict_res['last_update'] = dict_res['last_update'].isoformat()
             json_result.append(dict_res)
+        print json_result
         json_result = json_result[0] if len(json_result) == 1 else json_result
         return json.dumps(json_result)
 
@@ -44,13 +45,13 @@ class Retriever(object):
 class Updater(object):
     """Updates DB data."""
     def __init__(self, table, data_dict, cond=None):
-        super(Inserter, self).__init__()
+        super(Updater, self).__init__()
         self.table = table
         self.data_dict = data_dict
         self.condition = cond
 
     def build_req(self):
-        modified_fields = ', '.join(['%s=%s' % (k, v) for k, v in self.data_dict.iteritems()])
+        modified_fields = ', '.join(['"%s"=\'%s\'' % (k, v) for k, v in self.data_dict.iteritems()])
         req = "UPDATE %s SET %s WHERE %s;" % (
             self.table, modified_fields, self.condition)
         req = re.split('WHERE')[0] if not self.condition else req  # Removes the condition part

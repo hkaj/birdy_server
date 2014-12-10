@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 
 from contextlib import closing
 from core.auth import check_auth, login, logout
-from core.db import Retriever, Deleter, Inserter
+from core.db import Retriever, Deleter, Inserter, Updater
 from flask import Flask, escape, request, g, render_template
 from passlib.hash import md5_crypt, sha256_crypt
 
@@ -53,12 +53,17 @@ def teardown_request(exception):
 
 
 def create_relative(login1, login2):
-    condition = "login_user='%s' OR '%s'" % (login1, login2)
-    users = json.loads(Retriever('login_user', 'utilisateur', condition).fetch())
+    condition = "login_user='%s' OR login_user='%s'" % (login1, login2)
+    users = Retriever(['login_user'], 'utilisateur', condition).fetch()
+    print "avant"
+    print users
+    users = json.loads(users)
+    print "apres"
+    print users
     # Both users exist
     if len(users) == 2:
         rel = Retriever(
-            'status',
+            ['status'],
             'liensUtilisateurs',
             "status=true AND login_user_1='%s' AND login_user_2='%s'" % (login1, login2)
         ).fetch()
@@ -68,13 +73,16 @@ def create_relative(login1, login2):
             data['login_user_2'] = login2
             data['type'] = 'proche'
             data['status'] = 'true'
-            return Inserter('liensUtilisateurs', data).insert()
+            Inserter('liensUtilisateurs', data).insert()
+            data['login_user_1'], data['login_user_2'] = data['login_user_2'], data['login_user_1']
+            Inserter('liensUtilisateurs', data).insert()
+            return '''{"resp": "OK"}'''
         else:
             return '''{"resp": "ERROR - The relation already exists."}'''
     # The second user doesn't exist
-    elif len(users) == 1 and users[0]['login_user'] == login1:
-        return '''{"resp": "Une invitation va être envoyée à %s pour lui proposer d'utiliser le service."}''' % login2
-    # Both users missing
+    elif len(users) == 1 and users['login_user'] == login1:
+        return u'{"resp": "Une invitation va être envoyée à %s pour lui proposer d\'utiliser le service."}' % login2
+    # Both users or first user missing
     else:
         return '''{"resp": "ERROR - Users not found."}'''
 
@@ -112,13 +120,16 @@ def manage_user(username):
         condition = "login_user='%s'" % username
         return '{"resp": %s}' % Retriever(fields, table, condition).fetch()
     elif request.method == 'PUT':
-        user = Retriever('login_user', 'utilisateur', "login_user='%s'" % username).fetch()
+        user = Retriever(['login_user'], 'utilisateur', "login_user='%s'" % username).fetch()
         if user == '[]':
             return '''{"resp": "ERROR - User not found."}'''
         else:
-            return Updater('utilisateur', request.form, "login_user='%s'" % username).update()
+            params = {k: v for k, v in request.form.items()}
+            if 'password' in params.keys():
+                params['password'] = sha256_crypt.encrypt(params['password'])
+            return Updater('utilisateur', params, "login_user='%s'" % username).update()
     elif request.method == 'DELETE':
-        return Deleter('utilisateur', "login_user='%s'" % username)
+        return Deleter('utilisateur', "login_user='%s'" % username).delete()
 
 
 @app.route('/authorization', methods=['GET', 'POST', 'DELETE'])
@@ -145,7 +156,7 @@ def manage_position(login):
             return '{"resp": %s}' % resp
     elif request.method == 'PUT':
         # check that the user exists
-        user = Retriever('login_user', table, "login_user='%s'" % login).fetch()
+        user = Retriever(['login_user'], table, "login_user='%s'" % login).fetch()
         if user == '[]':
             return '''{"resp": "ERROR - Failed to update the position."}'''
         else:
@@ -169,7 +180,7 @@ def get_all_relatives(login):
 @app.route('/relative/<login1>/<login2>', methods=['POST', 'PUT', 'DELETE'])
 def manage_relative(login1, login2):
     if request.method == 'POST':
-        create_relative(login1, login2)
+        return create_relative(login1, login2)
     elif request.method == 'PUT':
         # this case isn't useful for now.
         condition = "((login_user_1='%s' AND login_user_2='%s') OR (login_user_1='%s' AND login_user_2='%s'))" % (
