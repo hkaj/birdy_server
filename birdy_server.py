@@ -54,12 +54,7 @@ def teardown_request(exception):
 
 def create_relative(login1, login2):
     condition = "login_user='%s' OR login_user='%s'" % (login1, login2)
-    users = Retriever(['login_user'], 'utilisateur', condition).fetch()
-    print "avant"
-    print users
-    users = json.loads(users)
-    print "apres"
-    print users
+    users = json.loads(Retriever(['login_user'], 'utilisateur', condition).fetch())
     # Both users exist
     if len(users) == 2:
         rel = Retriever(
