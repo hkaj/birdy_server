@@ -8,7 +8,6 @@
 
     :license: GNUL/GPLv3, see LICENSE for more details.
 """
-
 import json
 import psycopg2
 import xml.etree.ElementTree as ET
@@ -16,7 +15,8 @@ import xml.etree.ElementTree as ET
 from contextlib import closing
 from core.auth import check_auth, login, logout
 from core.db import Retriever, Deleter, Inserter, Updater
-from flask import Flask, escape, request, g, render_template
+from flask import abort, escape, Flask, g, render_template, request, session
+from functools import wraps
 from passlib.hash import md5_crypt, sha256_crypt
 
 
@@ -38,6 +38,16 @@ def connect_db():
         password=app.config['PASSWORD'],
     )
     return conn
+
+
+def auth_required(func):
+    @wraps(func)
+    def auth_checker(*args, **kwargs):
+        if session.get('username'):
+            return func(*args, **kwargs)
+        else:
+            abort(401)
+    return auth_checker
 
 
 @app.before_request
@@ -108,6 +118,7 @@ def create_user():
 
 
 @app.route('/utilisateur/<username>', methods=['GET', 'PUT', 'DELETE'])
+@auth_required
 def manage_user(username):
     fields = ['login_user', 'numero_tel', 'e_mail', 'nom', 'prenom', 'numero_tel_sec']
     table = 'utilisateur'
@@ -131,11 +142,11 @@ def manage_user(username):
 def manage_auth():
     # the functions will need data from the request
     if request.method == 'GET':
-        check_auth(request.session)
+        return check_auth(session)
     elif request.method == 'POST':
-        login(request)
+        return login(request, session)
     elif request.method == 'DELETE':
-        logout(request.session)
+        return logout(session)
 
 
 @app.route('/position/<login>', methods=['GET', 'PUT', ])
@@ -199,12 +210,12 @@ def get_relative_positions(login):
 
 
 @app.errorhandler(401)
-def wrong_credentials():
+def wrong_credentials(error):
     xml_res = ET.fromstring("<response></response>")
     msg = ET.Element('message')
-    msg.text = 'NULL - Wrong credentials.'
+    msg.text = "401 - Unauthorized"
     xml_res.append(msg)
-    return xml_res
+    return '401 - Unauthorized'
 
 if __name__ == "__main__":
     app.run()
