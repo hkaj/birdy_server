@@ -16,7 +16,7 @@ def check_auth(session):
         # escape will protect against XSS if we decide to render this
         msg.text = "%s - You are authenticated." % escape(session['username'])
         xml_res.append(msg)
-        return ET.dump(xml_res)
+        return ET.tostring(xml_res)
     return None
 
 
@@ -34,7 +34,7 @@ def login(request, session):
         msg = ET.Element('message')
         msg.text = '%s - You are now authenticated.' % escape(login)
         xml_res.append(msg)
-        return ET.dump(xml_res)
+        return ET.tostring(xml_res)
     else:
         abort(401)
 
@@ -45,4 +45,4 @@ def logout(session):
     msg = ET.Element('message')
     msg.text = 'Log out.'
     xml_res.append(msg)
-    return ET.dump(xml_res)
+    return ET.tostring(xml_res)

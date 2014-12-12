@@ -142,7 +142,15 @@ def manage_user(username):
 def manage_auth():
     # the functions will need data from the request
     if request.method == 'GET':
-        return check_auth(session)
+        auth = check_auth(session)
+        if auth:
+            return auth
+        else:
+            xml_res = ET.fromstring("<response></response>")
+            msg = ET.Element('message')
+            msg.text = 'NULL - You are not authenticated.'
+            xml_res.append(msg)
+            return ET.tostring(xml_res)
     elif request.method == 'POST':
         return login(request, session)
     elif request.method == 'DELETE':
@@ -215,7 +223,7 @@ def wrong_credentials(error):
     msg = ET.Element('message')
     msg.text = "401 - Unauthorized"
     xml_res.append(msg)
-    return '401 - Unauthorized'
+    return ET.tostring(xml_res)
 
 if __name__ == "__main__":
     app.run()
