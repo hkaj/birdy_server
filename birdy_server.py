@@ -135,6 +135,7 @@ def manage_user(username):
                 params['password'] = sha256_crypt.encrypt(params['password'])
             return Updater('utilisateur', params, "login_user='%s'" % username).update()
     elif request.method == 'DELETE':
+        Deleter('position', "login_user='%s'" % username).delete()
         return Deleter('utilisateur', "login_user='%s'" % username).delete()
 
 
