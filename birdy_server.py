@@ -40,14 +40,33 @@ def connect_db():
     return conn
 
 
-def auth_required(func):
-    @wraps(func)
-    def auth_checker(*args, **kwargs):
-        if session.get('username'):
-            return func(*args, **kwargs)
-        else:
-            abort(401)
-    return auth_checker
+def auth_required(who=None):
+    def auth_decorator(func):
+        @wraps(func)
+        def auth_checker(*args, **kwargs):
+            if who == 'user':
+                # check if the action is intended to be on the logged in user.
+                if session.get('username') in request.url:
+                    return func(*args, **kwargs)
+                else:
+                    abort(401)
+            elif who == 'user and friends':
+                # builds a list of the user and his friends
+                condition = "login_user_1='%s'" % session.get('username')
+                relatives = json.loads(
+                    Retriever(['login_user_2'], 'liensUtilisateurs', condition).fetch())
+                relatives.append(session.get('username'))
+                # check if the action is intended to be on the logged in user or a friend of his.
+                if any(rel in request.url for rel in relatives):
+                    return func(*args, **kwargs)
+                else:
+                    abort(401)
+            elif who == 'admin':
+                abort(401)
+            else:
+                return func(*args, **kwargs)
+        return auth_checker
+    return auth_decorator
 
 
 @app.before_request
@@ -93,6 +112,7 @@ def create_relative(login1, login2):
 
 
 @app.route('/utilisateurs')
+@auth_required(who='admin')
 def get_all_users():
     pass
 
@@ -117,15 +137,32 @@ def create_user():
         return res
 
 
-@app.route('/utilisateur/<username>', methods=['GET', 'PUT', 'DELETE'])
-@auth_required
-def manage_user(username):
+@app.route('/utilisateur/<username>')
+@auth_required(who='user and friends')
+def get_user(username):
     fields = ['login_user', 'numero_tel', 'e_mail', 'nom', 'prenom', 'numero_tel_sec']
     table = 'utilisateur'
     if request.method == 'GET':
         condition = "login_user='%s'" % username
         return '{"resp": %s}' % Retriever(fields, table, condition).fetch()
     elif request.method == 'PUT':
+        user = Retriever(['login_user'], 'utilisateur', "login_user='%s'" % username).fetch()
+        if user == '[]':
+            return '''{"resp": "ERROR - User not found."}'''
+        else:
+            params = {k: v for k, v in request.form.items()}
+            if 'password' in params.keys():
+                params['password'] = sha256_crypt.encrypt(params['password'])
+            return Updater('utilisateur', params, "login_user='%s'" % username).update()
+    elif request.method == 'DELETE':
+        Deleter('position', "login_user='%s'" % username).delete()
+        return Deleter('utilisateur', "login_user='%s'" % username).delete()
+
+
+@app.route('/utilisateur/<username>')
+@auth_required(who='user')
+def manage_user(username):
+    if request.method == 'PUT':
         user = Retriever(['login_user'], 'utilisateur', "login_user='%s'" % username).fetch()
         if user == '[]':
             return '''{"resp": "ERROR - User not found."}'''
@@ -158,27 +195,32 @@ def manage_auth():
         return logout(session)
 
 
-@app.route('/position/<login>', methods=['GET', 'PUT', ])
-def manage_position(login):
+@app.route('/position/<login>', methods=['PUT', ])
+@auth_required(who='user')
+def update_position(login):
     fields = ['id_position', 'login_user', 'latitude', 'longitude', 'vit', 'acc', 'last_update']
     table = 'position'
     condition = "login_user='%s'" % login
-    if request.method == 'GET':
-        resp = Retriever(fields, table, condition).fetch()
-        if resp == '[]':
-            return '''{"resp": "ERROR - Failed to read the position."}'''
-        else:
-            return '{"resp": %s}' % resp
-    elif request.method == 'PUT':
-        # check that the user exists
-        user = Retriever(['login_user'], table, "login_user='%s'" % login).fetch()
-        if user == '[]':
-            return '''{"resp": "ERROR - Failed to update the position."}'''
-        else:
-            return Updater('position', request.form, condition).update()
+    # check that the user exists
+    user = Retriever(['login_user'], table, "login_user='%s'" % login).fetch()
+    if user == '[]':
+        return '''{"resp": "ERROR - Failed to update the position."}'''
+    else:
+        return Updater('position', request.form, condition).update()
+
+
+@app.route('/position/<login>')
+@auth_required(who='user and friends')
+def get_position(login):
+    resp = Retriever(fields, table, condition).fetch()
+    if resp == '[]':
+        return '''{"resp": "ERROR - Failed to read the position."}'''
+    else:
+        return '{"resp": %s}' % resp
 
 
 @app.route('/relatives/<login>')
+@auth_required(who='user and friends')
 def get_all_relatives(login):
     fields = ['login_user_2']
     table = 'liensUtilisateurs'
@@ -193,6 +235,7 @@ def get_all_relatives(login):
 
 
 @app.route('/relative/<login1>/<login2>', methods=['POST', 'PUT', 'DELETE'])
+@auth_required(who='user and friends')
 def manage_relative(login1, login2):
     if request.method == 'POST':
         return create_relative(login1, login2)
@@ -208,6 +251,7 @@ def manage_relative(login1, login2):
 
 
 @app.route('/relativesPositions/<login>')
+@auth_required(who='user')
 def get_relative_positions(login):
     fields = ['rel.login_user_2', 'pos.latitude', 'pos.longitude', 'pos.vit', 'pos.acc']
     table = 'liensUtilisateurs AS rel LEFT JOIN position AS pos ON rel.login_user_2 = pos.login_user'
