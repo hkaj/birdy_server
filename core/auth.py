@@ -28,8 +28,10 @@ def login(request, session):
         'utilisateur',
         "login_user='%s'" % login
     ).fetch())
+    if not db_info:
+        abort(401)
     # if the user exists and the password matches
-    if 'password' in db_info.keys() and sha256_crypt.verify(passwd, db_info['password']):
+    elif 'password' in db_info.keys() and sha256_crypt.verify(passwd, db_info['password']):
         session['username'] = login
         msg = ET.Element('message')
         msg.text = '%s - You are now authenticated.' % escape(login)

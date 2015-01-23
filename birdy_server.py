@@ -44,7 +44,9 @@ def auth_required(who=None):
     def auth_decorator(func):
         @wraps(func)
         def auth_checker(*args, **kwargs):
-            if who == 'user':
+            if not session.get('username'):
+                abort(401)
+            elif who == 'user':
                 # check if the action is intended to be on the logged in user.
                 if session.get('username') in request.url:
                     return func(*args, **kwargs)
@@ -55,6 +57,8 @@ def auth_required(who=None):
                 condition = "login_user_1='%s'" % session.get('username')
                 relatives = json.loads(
                     Retriever(['login_user_2'], 'liensUtilisateurs', condition).fetch())
+                if isinstance(relatives, dict):
+                    relatives = relatives.values()
                 relatives.append(session.get('username'))
                 # check if the action is intended to be on the logged in user or a friend of his.
                 if any(rel in request.url for rel in relatives):
@@ -142,24 +146,11 @@ def create_user():
 def get_user(username):
     fields = ['login_user', 'numero_tel', 'e_mail', 'nom', 'prenom', 'numero_tel_sec']
     table = 'utilisateur'
-    if request.method == 'GET':
-        condition = "login_user='%s'" % username
-        return '{"resp": %s}' % Retriever(fields, table, condition).fetch()
-    elif request.method == 'PUT':
-        user = Retriever(['login_user'], 'utilisateur', "login_user='%s'" % username).fetch()
-        if user == '[]':
-            return '''{"resp": "ERROR - User not found."}'''
-        else:
-            params = {k: v for k, v in request.form.items()}
-            if 'password' in params.keys():
-                params['password'] = sha256_crypt.encrypt(params['password'])
-            return Updater('utilisateur', params, "login_user='%s'" % username).update()
-    elif request.method == 'DELETE':
-        Deleter('position', "login_user='%s'" % username).delete()
-        return Deleter('utilisateur', "login_user='%s'" % username).delete()
+    condition = "login_user='%s'" % username
+    return '{"resp": %s}' % Retriever(fields, table, condition).fetch()
 
 
-@app.route('/utilisateur/<username>')
+@app.route('/utilisateur/<username>', methods=['PUT', 'DELETE', ])
 @auth_required(who='user')
 def manage_user(username):
     if request.method == 'PUT':
@@ -212,6 +203,9 @@ def update_position(login):
 @app.route('/position/<login>')
 @auth_required(who='user and friends')
 def get_position(login):
+    fields = ['id_position', 'login_user', 'latitude', 'longitude', 'vit', 'acc', 'last_update']
+    table = 'position'
+    condition = "login_user='%s'" % login
     resp = Retriever(fields, table, condition).fetch()
     if resp == '[]':
         return '''{"resp": "ERROR - Failed to read the position."}'''
@@ -235,7 +229,7 @@ def get_all_relatives(login):
 
 
 @app.route('/relative/<login1>/<login2>', methods=['POST', 'PUT', 'DELETE'])
-@auth_required(who='user and friends')
+@auth_required(who='user')
 def manage_relative(login1, login2):
     if request.method == 'POST':
         return create_relative(login1, login2)
