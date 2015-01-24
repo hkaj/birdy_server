@@ -161,6 +161,30 @@ def manage_user(username):
             params = {k: v for k, v in request.form.items()}
             if 'password' in params.keys():
                 params['password'] = sha256_crypt.encrypt(params['password'])
+            # if the user login is modified, it's also modified in liensUtilisateurs
+            if 'login_user' in params.keys():
+                # First, let's check if the new username is already taken
+                user = Retriever(
+                    ['login_user'], 'utilisateur', "login_user='%s'" % params['login_user']).fetch()
+                if user != '[]':
+                    return '''{"resp": "ERROR - Username already taken."}'''
+                else:
+                    # Replace username in liensutilisateurs and position tables
+                    Updater(
+                        'liensutilisateurs',
+                        {'login_user_2': params['login_user']},
+                        "login_user_2='%s'" % username
+                    ).update()
+                    Updater(
+                        'liensutilisateurs',
+                        {'login_user_1': params['login_user']},
+                        "login_user_1='%s'" % username
+                    ).update()
+                    Updater(
+                        'position',
+                        {'login_user': params['login_user']},
+                        "login_user='%s'" % username
+                    ).update()
             return Updater('utilisateur', params, "login_user='%s'" % username).update()
     elif request.method == 'DELETE':
         Deleter('position', "login_user='%s'" % username).delete()
