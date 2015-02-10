@@ -1,0 +1,15 @@
+Jinja2==2.7.3
+MarkupSafe==0.23
+PyTrie==0.2
+PyYAML==3.11
+Pygments==2.0.2
+Twisted==15.0.0
+argparse==1.2.1
+autobahn==0.9.5
+crossbar==0.10.1
+mistune==0.5
+netaddr==0.7.13
+shutilwhich==1.0.1
+six==1.9.0
+wsgiref==0.1.2
+zope.interface==4.1.2

@@ -6,7 +6,7 @@
 
     The server part of Birdy.
 
-    :license: GNUL/GPLv3, see LICENSE for more details.
+    :license: GNU/GPLv3, see LICENSE for more details.
 """
 import json
 import psycopg2
@@ -24,7 +24,7 @@ from passlib.hash import md5_crypt, sha256_crypt
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('BIRDY_SETTINGS', silent=True)
-app.config['DEBUG'] = True
+app.config['DEBUG'] = False
 
 
 def connect_db():

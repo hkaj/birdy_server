@@ -54,5 +54,6 @@ docs/_build/
 target/
 
 venv/
+cvenv/
 
 birdy.cfg
