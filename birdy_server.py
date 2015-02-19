@@ -65,8 +65,12 @@ def auth_required(who=None):
                     return func(*args, **kwargs)
                 else:
                     abort(401)
-            elif who == 'admin':
-                abort(401)
+            elif who == 'all':
+                # All users are allowed to access the ressource
+                if session.get('username'):
+                    return func(*args, **kwargs)
+                else:
+                    abort(401)
             else:
                 return func(*args, **kwargs)
         return auth_checker
@@ -116,9 +120,9 @@ def create_relative(login1, login2):
 
 
 @app.route('/utilisateurs')
-@auth_required(who='admin')
+@auth_required(who='all')
 def get_all_users():
-    pass
+    return Retriever(['login_user', 'nom', 'prenom'], table).fetch()
 
 
 @app.route('/')
