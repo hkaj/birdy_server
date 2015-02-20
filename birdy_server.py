@@ -122,7 +122,7 @@ def create_relative(login1, login2):
 @app.route('/utilisateurs')
 @auth_required(who='all')
 def get_all_users():
-    return Retriever(['login_user', 'nom', 'prenom'], table).fetch()
+    return Retriever(['login_user', 'nom', 'prenom'], 'utilisateur').fetch()
 
 
 @app.route('/')
