@@ -24,7 +24,7 @@ from passlib.hash import md5_crypt, sha256_crypt
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('BIRDY_SETTINGS', silent=True)
-app.config['DEBUG'] = False
+app.config['DEBUG'] = True
 
 
 def connect_db():
@@ -250,9 +250,16 @@ def get_all_relatives(login):
     relative_logins = json.loads(Retriever(fields, table, condition).fetch())
     relatives = []
     rel_fields = ['login_user', 'numero_tel', 'e_mail', 'nom', 'prenom', 'numero_tel_sec']
-    for relative in relative_logins:
-        rel_condition = "login_user='%s'" % relative['login_user_2']
+    # Only one relative
+    if isinstance(relative_logins, dict):
+        rel_condition = "login_user='%s'" % relative_logins['login_user_2']
         relatives.append(json.loads(Retriever(rel_fields, 'utilisateur', rel_condition).fetch()))
+    # Several relatives
+    elif isinstance(relative_logins, list):
+        for relative in relative_logins:
+            rel_condition = "login_user='%s'" % relative['login_user_2']
+            relatives.append(json.loads(Retriever(rel_fields, 'utilisateur', rel_condition).fetch()))
+        
     return '{"resp": %s}' % json.dumps(relatives)
 
 
