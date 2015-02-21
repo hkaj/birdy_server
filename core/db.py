@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 import json
+import psycopg2
 
 from flask import g
 
@@ -101,6 +102,8 @@ class Inserter(object):
         self.data_dict = data_dict
 
     def build_req(self):
+        if 'avatar' in self.data_dict:
+            self.data_dict['avatar'] = psycopg2.Binary(self.data_dict['avatar'])
         req = "INSERT INTO %s(%s) VALUES (%s);" % (
             self.table,
             ', '.join(['"%s"' % k for k in self.data_dict.keys()]),

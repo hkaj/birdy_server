@@ -122,7 +122,7 @@ def create_relative(login1, login2):
 @app.route('/utilisateurs')
 @auth_required(who='all')
 def get_all_users():
-    return Retriever(['login_user', 'nom', 'prenom'], 'utilisateur').fetch()
+    return Retriever(['login_user', 'nom', 'prenom', 'avatar'], 'utilisateur').fetch()
 
 
 @app.route('/')
@@ -259,7 +259,6 @@ def get_all_relatives(login):
         for relative in relative_logins:
             rel_condition = "login_user='%s'" % relative['login_user_2']
             relatives.append(json.loads(Retriever(rel_fields, 'utilisateur', rel_condition).fetch()))
-        
     return '{"resp": %s}' % json.dumps(relatives)
 
 

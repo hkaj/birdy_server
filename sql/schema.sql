@@ -69,7 +69,9 @@ CREATE TABLE utilisateur (
     prenom character varying,
     numero_tel character varying(14),
     e_mail character varying,
-    numero_tel_sec character varying(14)
+    numero_tel_sec character varying(14),
+    avatar bytea,
+    statut character varying
 );
 
 ALTER TABLE public.utilisateur OWNER TO birdy_admin;
