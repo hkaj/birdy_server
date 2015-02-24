@@ -8,7 +8,7 @@
 
     :license: GNU/GPLv3, see LICENSE for more details.
 """
-import json
+import simplejson as json
 import psycopg2
 import xml.etree.ElementTree as ET
 

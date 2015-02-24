@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
-import json
+import simplejson as json
 import xml.etree.ElementTree as ET
 
 from flask import abort, Flask, escape, request, session
