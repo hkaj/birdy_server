@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
-import json
+import simplejson as json
 import psycopg2
 
 from flask import g
