@@ -27,10 +27,13 @@ class Retriever(object):
         json_result = []
         for line in result:
             dict_res = {self.fields[pos]: line[pos] for pos in range(len(self.fields))}
-            if 'last_update' in dict_res.keys():
+            if 'last_update' in dict_res:
                 dict_res['last_update'] = dict_res['last_update'].isoformat()
+            if 'avatar' in dict_res:
+                dict_res['avatar'] = str(dict_res['avatar'])
             json_result.append(dict_res)
         json_result = json_result[0] if len(json_result) == 1 else json_result
+
         return json.dumps(json_result)
 
     def fetch(self):
@@ -51,6 +54,8 @@ class Updater(object):
         self.condition = cond
 
     def build_req(self):
+        if 'avatar' in self.data_dict:
+            self.data_dict['avatar'] = psycopg2.Binary(self.data_dict['avatar'])
         modified_fields = ', '.join(['"%s"=\'%s\'' % (k, v) for k, v in self.data_dict.iteritems()])
         req = "UPDATE %s SET %s WHERE %s;" % (
             self.table, modified_fields, self.condition)
