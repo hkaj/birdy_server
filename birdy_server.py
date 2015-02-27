@@ -148,7 +148,7 @@ def create_user():
 @app.route('/utilisateur/<username>')
 @auth_required(who='user and friends')
 def get_user(username):
-    fields = ['login_user', 'numero_tel', 'e_mail', 'nom', 'prenom', 'numero_tel_sec']
+    fields = ['login_user', 'numero_tel', 'e_mail', 'nom', 'prenom', 'numero_tel_sec', 'status', 'avatar']
     table = 'utilisateur'
     condition = "login_user='%s'" % username
     return '{"resp": %s}' % Retriever(fields, table, condition).fetch()
