@@ -59,6 +59,8 @@ def auth_required(who=None):
                     Retriever(['login_user_2'], 'liensUtilisateurs', condition).fetch())
                 if isinstance(relatives, dict):
                     relatives = relatives.values()
+                else:
+                    relatives = [rel.values()[0] for rel in relatives]
                 relatives.append(session.get('username'))
                 # check if the action is intended to be on the logged in user or a friend of his.
                 if any(rel in request.url for rel in relatives):
