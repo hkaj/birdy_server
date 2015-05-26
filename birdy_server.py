@@ -24,7 +24,13 @@ from passlib.hash import md5_crypt, sha256_crypt
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('BIRDY_SETTINGS', silent=True)
-app.config['DEBUG'] = True
+app.config['DEBUG'] = False
+
+
+# make the session permanent (i.e. 31 days)
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
 
 
 def connect_db():
