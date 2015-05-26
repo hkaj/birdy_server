@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 from contextlib import closing
 from core.auth import check_auth, login, logout
 from core.db import Retriever, Deleter, Inserter, Updater
-from flask import abort, escape, Flask, g, render_template, request, session
+from flask import abort, escape, Flask, g, render_template, request, session, Response
 from functools import wraps
 from passlib.hash import md5_crypt, sha256_crypt
 
@@ -304,7 +304,7 @@ def wrong_credentials(error):
     msg = ET.Element('message')
     msg.text = "401 - Unauthorized"
     xml_res.append(msg)
-    return ET.tostring(xml_res)
+    return Response(ET.tostring(xml_res), 401)
 
 if __name__ == "__main__":
     app.run()
